@@ -2,7 +2,7 @@
 
 ## Why the Windows-only hotkey cannot return from Mac
 
-With the keyboard/mouse receiver plugged into the Dell monitor's USB downstream hub, the built-in KVM directs keyboard input to the selected USB upstream computer. After switching to Mac, Windows can no longer detect Ctrl+Alt+2. This is expected hardware behavior, not an AutoHotkey failure.
+With the keyboard/mouse receiver plugged into the Dell monitor's USB downstream hub, the built-in KVM directs keyboard input to the selected USB upstream computer. After switching to Mac, Windows can no longer detect Windows-side hotkeys. This is expected hardware behavior, not an AutoHotkey failure.
 
 ## Wiring and input values
 
@@ -16,8 +16,8 @@ With the keyboard/mouse receiver plugged into the Dell monitor's USB downstream 
 
 Run the existing `monitorSwitch-U2723QE.ahk` under AutoHotkey v2.
 
-- **Ctrl+Alt+1:** Dell USB-C / Mac
-- **Ctrl+Alt+2:** Dell HDMI / Windows, **only while Windows owns the keyboard**
+- **Alt+[** (Windows): Dell USB-C / Mac.
+- The legacy Ctrl+Alt+1 / Ctrl+Alt+2 bindings are removed.
 
 ## Mac → Windows
 
@@ -35,7 +35,7 @@ To bind a native global macOS hotkey:
 
 1. Open **Shortcuts** on the Mac and create a new shortcut called **Return to Windows**.
 2. Add **Run Shell Script**, with the command above.
-3. Open **Shortcut Details**, choose **Add Keyboard Shortcut**, and press **Control+Option+2** (if not reserved on your Mac).
+3. Open **Shortcut Details**, choose **Add Keyboard Shortcut**, and press **Option+]** (if not reserved on your Mac).
 4. Test **while Mac owns the keyboard and the Dell input is USB-C**. On success the Dell should switch to Windows HDMI and the keyboard should follow if the Dell USB KVM input mappings are correct.
 
 Apple documentation: https://support.apple.com/zh-cn/guide/shortcuts-mac/-apd163eb9f95/mac
