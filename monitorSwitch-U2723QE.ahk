@@ -2,14 +2,14 @@
 #SingleInstance Force
 
 ; Dell U2723QE (monitor ID DEL4277) - VCP 0x60 input selection
-; Ctrl+Alt+1: Mac on USB-C (27 / 0x1B)
-; Ctrl+Alt+2: Windows on HDMI (17 / 0x11)
-; The sent key mirrors the existing Synergy screen-switch shortcuts.
+; Windows Alt+[ : Mac on USB-C (27 / 0x1B)
+; Mac Option+] : return to Windows using the macOS helper.
+; sc01A is the physical [ key on a standard US keyboard.
 
 monitorId := "DEL4277"
 controlMyMonitor := A_ScriptDir "\ControlMyMonitor.exe"
 
-SwitchMonitorInput(inputValue, synergyKey) {
+SwitchMonitorInput(inputValue) {
     global monitorId, controlMyMonitor
     if !FileExist(controlMyMonitor) {
         MsgBox "Missing ControlMyMonitor.exe: " controlMyMonitor
@@ -24,9 +24,6 @@ SwitchMonitorInput(inputValue, synergyKey) {
         return
     }
 
-    ; Avoid recursively triggering this hotkey when forwarding to Synergy.
-    SendEvent "^!{" synergyKey "}"
 }
 
-$^!1::SwitchMonitorInput(27, "1")
-$^!2::SwitchMonitorInput(17, "2")
+!sc01A::SwitchMonitorInput(27)
