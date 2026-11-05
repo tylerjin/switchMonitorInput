@@ -1,5 +1,5 @@
 #!/bin/zsh
-# Dell U2723QE: return the monitor and its built-in USB KVM to Windows HDMI.
+# Dell U2723QE: return the monitor and its built-in USB KVM to Windows DisplayPort.
 # Install a macOS Shortcut/Quick Action to run this script on a hotkey.
 set -euo pipefail
 
@@ -26,5 +26,5 @@ if [[ "$(print -r -- "$matches" | /usr/bin/wc -l | /usr/bin/tr -d ' ')" != "1" ]
 fi
 
 display_number="$(print -r -- "$matches" | /usr/bin/sed -E 's/^\[([0-9]+)\].*/\1/')"
-"$DDC" display "$display_number" set input 17
-print "Requested Dell U2723QE -> Windows HDMI (VCP 0x60 = 17)"
+"$DDC" display "$display_number" set input 15
+print "Requested Dell U2723QE -> Windows DisplayPort (VCP 0x60 = 15)"
