@@ -1,3 +1,15 @@
+## Confirmed LG input mapping and webOS 26 compatibility (2026-11-05)
+
+- LG main TV: **Windows HDMI 4**, **Mac HDMI 1**.
+- Dell vertical U2723QE: **Windows DisplayPort (VCP 15)**, **Mac USB-C (VCP 27)**.
+- Windows LGTV Companion was upgraded from **5.0.5 to 5.7.0**. A non-switching foreground-app query now succeeds; the TV reported `com.webos.app.hdmi4`.
+- macOS `lg_webos_compat.py` removes a blacklisted signed manifest from the existing `bscpylgtv` CLI without modifying its installed package. The read-only `--pair-test` succeeded with `com.webos.app.hdmi4`.
+- The machine-local Windows config `DualMonitor.local.json` has `LgMacHdmi=1`; the macOS config `DualMonitor.local.env` records `LG_MAC_HDMI=1`, `LG_WIN_HDMI=4`. Do not commit local IPs or key databases.
+- Windows `SwitchBothToMac.ps1 -DryRun` reports LG HDMI 1, Dell USB-C 27. Mac `SwitchBothToWindows.command --dry-run` reports LG HDMI 4, Dell DP 15.
+- **Physical two-display switching has not been validated. The existing Win Alt+[ and Mac Option+] hotkeys still control Dell only.** After a reversible physical test, wire them to `SwitchBothToMac.ps1` and `SwitchBothToWindows.command`, preserving the LG-first, Dell-second fail-closed order.
+
+---
+
 ## 2026-11-05: LG 42-inch main screen + Dell U2723QE portrait screen
 
 **Status: staging only; existing working hotkeys remain active.** Do not claim two-display switching is operational until the pairing/HDMI prerequisites below are verified.
