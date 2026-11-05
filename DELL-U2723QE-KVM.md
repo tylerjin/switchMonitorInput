@@ -1,3 +1,16 @@
+## 2026-11-05: fixed actual hotkey wiring and added LG input readback
+
+**Current active hotkeys:** Windows **Alt+[** and macOS **Option+]** both now invoke dual-display orchestration; the prior hotkey entry scripts had only called the Dell KVM, which explained why LG did not switch.
+
+- Windows: `monitorSwitch-U2723QE.ahk` invokes `SwitchBothToMac.ps1`. The latter sends LG to HDMI 1, verifies the foreground app is `com.webos.app.hdmi1` on two successive polls, then sends Dell VCP 27 (USB-C).
+- macOS: existing `SwitchDellToWindows.command` shortcut path now invokes `SwitchBothToWindows.command`. This verifies LG HDMI 4 on two successive polls, then calls `SwitchDellOnlyToWindows.command` (Dell VCP 15).
+- Both sides report LG failures rather than claiming success. Windows logs `SwitchBothToMac.log` in the repo folder; Mac logs `/Users/Shared/SwitchMonitorInput/SwitchBothToWindows.log`.
+- **Backout:** the original Dell-only commands remain available separately as `monitorSwitch-DellOnly.ahk` and `SwitchDellOnlyToWindows.command`.
+- Windows LGTV Companion 5.7.0 and Mac unsigned-manifest webOS client both passed read-only control/authorization tests. **An actual full physical round trip triggered by the updated hotkeys is still pending user validation**.
+- The older "staged only / no hotkey binding" notes below describe the previous state; they no longer describe the currently deployed entrypoints.
+
+---
+
 ## Confirmed LG input mapping and webOS 26 compatibility (2026-11-05)
 
 - LG main TV: **Windows HDMI 4**, **Mac HDMI 1**.
