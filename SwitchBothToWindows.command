@@ -1,24 +1,56 @@
 #!/bin/zsh
-# Mac -> Windows. LG main display via webOS, Dell portrait via built-in USB KVM.
+# Return LG to Windows HDMI 4 first; then Dell USB KVM to Windows DP 15.
 set -euo pipefail
 ROOT="/Users/Shared/SwitchMonitorInput"
-CONFIG="$ROOT/DualMonitor.local.env"
-[[ -r "$CONFIG" ]] || { print -u2 "Missing $CONFIG"; exit 2; }
-source "$CONFIG"
-[[ "$LG_WIN_HDMI" == [1-4] ]] || { print -u2 "Invalid LG_WIN_HDMI"; exit 3; }
-[[ -n "$LG_TV_IP" ]] || { print -u2 "Missing LG_TV_IP"; exit 3; }
+source "$ROOT/DualMonitor.local.env"
+[[ "$LG_WIN_HDMI" == [1-4] && "$LG_MAC_HDMI" == [1-4] ]] || exit 2
 PYTHON="$ROOT/.venv/bin/python"
 COMPAT="$ROOT/lg_webos_compat.py"
 KEYFILE="$ROOT/.lg-webos-key.sqlite"
-[[ -x "$PYTHON" && -r "$COMPAT" ]] || { print -u2 "WebOS compatibility client missing"; exit 4; }
-if [[ "$#" -gt 0 && "$1" == "--dry-run" ]]; then
+LOG="$ROOT/SwitchBothToWindows.log"
+lg() { "$PYTHON" "$COMPAT" --log ERROR -p "$KEYFILE" "$LG_TV_IP" "$@"; }
+record() { print -r -- "$(date '+%F %T') $*" >> "$LOG"; }
+if [[ "${1:-}" == "--dry-run" ]]; then
   print "READY: LG -> HDMI_$LG_WIN_HDMI; Dell -> DisplayPort 15"
   exit 0
 fi
-if [[ "$#" -gt 0 && "$1" == "--pair-test" ]]; then
-  "$PYTHON" "$COMPAT" --log ERROR -p "$KEYFILE" "$LG_TV_IP" get_current_app
+if [[ "${1:-}" == "--pair-test" || "${1:-}" == "--check-only" ]]; then
+  lg get_current_app
   exit 0
 fi
-# Fail closed: only transfer keyboard after LG switch succeeds.
-"$PYTHON" "$COMPAT" --log ERROR -p "$KEYFILE" "$LG_TV_IP" set_input "HDMI_$LG_WIN_HDMI"
-/bin/zsh "$ROOT/SwitchDellOnlyToWindows.command"
+target="com.webos.app.hdmi$LG_WIN_HDMI"
+before="$(lg get_current_app)"
+record "BEGIN current=$before target=$target"
+if [[ "$before" != "$target" ]]; then
+  lg set_input "HDMI_$LG_WIN_HDMI" >> "$LOG" 2>&1 || {
+    record "LG_COMMAND_FAILED; Dell not switched"
+    exit 3
+  }
+fi
+matched=0
+for i in {1..10}; do
+  sleep 0.5
+  current="$(lg get_current_app)" || {
+    record "LG_READBACK_FAILED; Dell not switched"
+    exit 4
+  }
+  record "READBACK[$i]=$current"
+  if [[ "$current" == "$target" ]]; then
+    (( matched+=1 ))
+  else
+    matched=0
+  fi
+  if (( matched >= 2 )); then break; fi
+done
+if (( matched < 2 )); then
+  record "LG_NOT_CONFIRMED; restoring HDMI_$LG_MAC_HDMI"
+  lg set_input "HDMI_$LG_MAC_HDMI" >> "$LOG" 2>&1 || true
+  print -u2 "LG input not confirmed; Dell KVM unchanged"
+  exit 5
+fi
+if ! /bin/zsh "$ROOT/SwitchDellOnlyToWindows.command" >> "$LOG" 2>&1; then
+  record "DELL_FAILED; restoring HDMI_$LG_MAC_HDMI"
+  lg set_input "HDMI_$LG_MAC_HDMI" >> "$LOG" 2>&1 || true
+  exit 6
+fi
+record "OK LG=HDMI_$LG_WIN_HDMI Dell=DP15"
