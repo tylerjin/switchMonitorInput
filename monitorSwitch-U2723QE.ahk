@@ -1,29 +1,24 @@
 #Requires AutoHotkey v2.0
 #SingleInstance Force
 
-; Dell U2723QE (monitor ID DEL4278) - VCP 0x60 input selection
-; Windows Alt+[ : Mac on USB-C (27 / 0x1B)
-; Mac Option+] : return to Windows using the macOS helper.
-; sc01A is the physical [ key on a standard US keyboard.
+; Dell U2723QE + LG OLED dual-screen switch to Mac
+; Alt+[ invokes LG HDMI1 readback verification before Dell USB-C27 KVM switch.
+; Saved Dell-only fallback: monitorSwitch-DellOnly.ahk
+!sc01A::SwitchBothToMac()
 
-monitorId := "DEL4278"
-controlMyMonitor := A_ScriptDir "\ControlMyMonitor.exe"
-
-SwitchMonitorInput(inputValue) {
-    global monitorId, controlMyMonitor
-    if !FileExist(controlMyMonitor) {
-        MsgBox "Missing ControlMyMonitor.exe: " controlMyMonitor
+SwitchBothToMac() {
+    script := A_ScriptDir "\SwitchBothToMac.ps1"
+    if !FileExist(script) {
+        MsgBox "Missing dual-display script: " script
         return
     }
-
-    command := '"' controlMyMonitor '" /SetValue "' monitorId '" 60 ' inputValue
+    command := '"' A_WinDir '\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "' script '"'
     try {
-        RunWait(command, A_ScriptDir, "Hide")
+        code := RunWait(command, A_ScriptDir, "Hide")
+        if (code != 0) {
+            MsgBox "LG dual-display switch failed (exit " code ").`nDell KVM was not switched.`nSee: " A_ScriptDir "\SwitchBothToMac.log"
+        }
     } catch as err {
-        MsgBox "Cannot change Dell U2723QE input.`n" err.Message
-        return
+        MsgBox "Cannot start dual-display switch: " err.Message
     }
-
 }
-
-!sc01A::SwitchMonitorInput(27)
