@@ -1,3 +1,24 @@
+## Wake diagnosis: 2026-11-06 (Dell KVM / LG OLED)
+
+**Reported:** when both computers' screens are dark, a key press seems to wake an inconsistent host, while LG sometimes does not light up.
+
+**Measured, not inferred:**
+- Windows AC screen timeout ~10 minutes, OS S3 sleep timeout disabled; keyboard/mouse HID wake capability present; no recent Windows Power-Troubleshooter event found. The two machines being "screen off" is not proof that they were system-sleeping.
+- Mac AC `pmset sleep=0` (no automatic system sleep), `displaysleep=60`; macOS logs several display-off/on events, including built-in keyboard/trackpad activity. The Mac can be active when its display is dark.
+- LGTV Companion v5.7.0 was additionally configured with `BlankWhenIdle=true` and `BlankWhenIdleDelay=5`: *Windows idle could blank the shared LG panel even while the Mac was using it.* Backed up `C:\ProgramData\LGTV Companion\config.json` to `config.pre-dual-wake-fix-20261106.json` and changed **only** `BlankWhenIdle=false`. Restarted `LGTVsvc`; readback: false, auto HDMI select still false, service running, TV still on HDMI 4.
+- Current LG webOS `get_power_state` returned `Active`; thus the field problem of a fully powered-off TV was not reproduced. Windows `LGTVcli.exe -screenon Device1` returned `Active` and HDMI remained 4. On the Mac, calling `turn_screen_on` while already active correctly returns error "-102: current sub state must be screen off"; do not insert an unconditional call into the existing working hotkey.
+- HDMI-CEC/SIMPLINK remains **off**, deliberately preventing wake-driven source steals. The downside is no HDMI-based TV power sync. LGTV Companion can power on LG by network from Windows, but Mac does not have a console-user wake watcher installed; auto-on from a Mac wake is not established.
+
+**Dell KVM OSD must be checked by the user:** Input Source > Auto Select and Auto Select for USB-C, Personalize > Fast Wakeup, Other USB Charging. The state is not reliably exposed by the current DDC/CI tooling. Auto Select may transfer keyboard focus when a video source sleeps/wakes; the desired behavior is *keep the last explicit hotkey-selected host*, not switch to any newly signaled host. Try USB-C Auto Select=No and general Auto Select=Off (with a reversible wake test). Consider Fast Wakeup=On and Other USB Charging=On in Standby to maintain USB readiness; higher standby power. Do not change the existing USB upstream-to-video port mapping.
+
+**Follow-up physical tests:** (1) While Windows owns KVM, let both video outputs darken, press shared keyboard: Windows should become active; Dell must not auto-switch to USB-C. (2) While Mac owns KVM repeat: Mac should become active; Dell must not auto-switch to DP. (3) Check whether LG is actually in webOS standby or just panel-black on failure; if truly off and Mac owns KVM, add owner-aware *power-only* wake automation for Mac, never HDMI auto-source switching. (4) Confirm Alt+[ / Option+] dual-display switching still works.
+
+OLED care: disabling Windows' cross-host five-minute forced blank does not bypass OS/TV protection; however, Mac currently waits 60 minutes to sleep its display. Recommend configuring a shorter macOS display-off interval (e.g. 10-15 minutes) if appropriate.
+
+This task's **configuration correction is verified; physical dual-host sleep/wake behavior remains unverified.** Do not claim it fully fixed until the OSD and user wake tests have passed.
+
+---
+
 ## 2026-11-05: fixed actual hotkey wiring and added LG input readback
 
 **Current active hotkeys:** Windows **Alt+[** and macOS **Option+]** both now invoke dual-display orchestration; the prior hotkey entry scripts had only called the Dell KVM, which explained why LG did not switch.
